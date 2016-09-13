@@ -1,0 +1,103 @@
+
+<html>
+
+    <script>
+    
+        /*
+                
+        */
+        
+            /*
+                valid_postmessage_code
+            */
+            
+        
+            <script>
+                    
+                function post_result(check_state) {
+                    var parentwin = window.parent;
+                    parentwin.postMessage(check_state,'*');
+                }
+    
+                function find_window_onmessage_argument_name(source_onmessage_code) {
+                    var left_parentheses_index=source_onmessage_code.indexOf('(');
+                    var right_parentheses_index=source_onmessage_code.indexOf(')');
+
+                    return source_onmessage_code.substr(left_parentheses_index+1,right_parentheses_index-left_parentheses_index-1);
+                }
+            
+                if ('function'==typeof window.onmessage) {
+                    var source_onmessage_code=window.onmessage.toString().trim();
+                    var onmessage_argument_name=find_window_onmessage_argument_name(source_onmessage_code);
+                    var first_left_braces=source_onmessage_code.indexOf('{');
+                    var ready_to_replace_code=source_onmessage_code.substr(0,first_left_braces);
+                    
+                    /*
+                        注入到onmessage() 中的代码,Hook onmessage 的参数有没有给调用..
+                    
+                        function set_onmessage_argument_variant_hook(variant_name) {
+                            variant_name.data_=variant_name.data;
+                            variant_name.__defineGetter__('data',function () {
+                                console.log('read');
+                                post_result(true);
+                                return this.data_;
+                            });
+                            variant_name.__defineSetter__('data',function (new_value) {
+                                console.log('write');  //  对于postMessage 传递的数据一般不会重新回去写..
+                                this.data_=new_value;
+                            });
+                        }
+                        set_onmessage_argument_variant_hook(onmessage_argument_name);
+                    */
+                    var hook_onmessage_argument_name_code='function set_onmessage_argument_variant_hook(variant_name){variant_name.data_=variant_name.data;variant_name.__defineGetter__("data",function(){console.log("read");post_result(true);return this.data_});variant_name.__defineSetter__("data",function(new_value){console.log("write");this.data_=new_value})}set_onmessage_argument_variant_hook(onmessage_argument_name);';
+                    
+                    source_onmessage_code.replace(ready_to_replace_code,ready_to_replace_code+hook_onmessage_argument_name_code);
+                    /*
+                        function (message) {  <--  监控message.data 属性被引用的对象在这里
+                        
+                        }
+                    */
+                    
+                    eval('window.onmessage='+source_onmessage_code);
+                }
+            <\/script>
+        
+        function get_page(url) {
+            var requester=new XMLHttpRequest();
+            var result={};
+            
+            try {
+                requester.open('GET',url,false);
+                requester.send();
+
+                if (200==requester.status) {
+                    result['status']=true;
+                    result['code']=requester.responseText;
+                } else
+                    result['status']=false;
+            } catch (exception) {
+                result['status']=false;
+            }
+            return result;
+        }
+    
+        function log(information) {
+            var output_window=document.getElementById('output_result_window');
+        
+            output_window.innerHTML=escape(information);
+        }
+        
+        log(get_page('http://www.qq.com/'));
+        
+    </script>
+    
+    <body>
+    
+        <div id="output_result_window">
+        
+        </div>
+    
+    </body>
+
+</html>
+

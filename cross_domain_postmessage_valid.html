@@ -1,0 +1,20 @@
+
+<html>
+
+    <script>
+    
+        function send_payload() {
+            var iframe_window=document.getElementById('sub_envirment').contentWindow;
+            
+            iframe_window.postMessage('test','*');
+        }
+    
+    </script>
+    
+    <body onload="send_payload()">
+    
+        <iframe id="sub_envirment" src="data:text/html,<script>window.onmessage=function (message){alert(message.data);}</script>" />
+    
+    </body>
+
+</html>
